@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Livraison</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e0e0e0; }
+
+    header {
+      background: linear-gradient(135deg, #1a1f2e, #2d3561);
+      padding: 24px 40px;
+      border-bottom: 2px solid #3d5af1;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    header h1 { font-size: 24px; font-weight: 700; color: #fff; }
+    header span { font-size: 13px; color: #8892b0; margin-left: auto; }
+
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding: 24px 40px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 0 40px 24px; }
+
+    .card {
+      background: #1a1f2e;
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid #2a2f45;
+    }
+    .card h2 { font-size: 13px; color: #8892b0; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .card .value { font-size: 42px; font-weight: 700; color: #3d5af1; }
+    .card .sub { font-size: 12px; color: #556; margin-top: 4px; }
+
+    .section { padding: 0 40px 24px; }
+    .section h2 { font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #2a2f45; }
+
+    table { width: 100%; border-collapse: collapse; background: #1a1f2e; border-radius: 12px; overflow: hidden; }
+    th { background: #2d3561; color: #8892b0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; padding: 12px 16px; text-align: left; }
+    td { padding: 12px 16px; border-bottom: 1px solid #2a2f45; font-size: 14px; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #1f2640; }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge.en_attente { background: #2d2a1f; color: #f0a500; }
+    .badge.assignee { background: #1f2d3a; color: #3d9af1; }
+    .badge.livree { background: #1f2d2a; color: #2dcc70; }
+
+    .stars { color: #f0a500; }
+    .rating-bar { background: #2a2f45; border-radius: 4px; height: 6px; margin-top: 4px; }
+    .rating-fill { background: linear-gradient(90deg, #3d5af1, #2dcc70); height: 6px; border-radius: 4px; }
+
+    .top-livreur {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: #1a1f2e;
+      border-radius: 10px;
+      border: 1px solid #2a2f45;
+      margin-bottom: 8px;
+    }
+    .top-livreur .rank { font-size: 20px; font-weight: 700; color: #3d5af1; width: 30px; }
+    .top-livreur .info { flex: 1; }
+    .top-livreur .info .name { font-weight: 600; font-size: 14px; }
+    .top-livreur .info .id { font-size: 12px; color: #8892b0; }
+    .top-livreur .score { font-size: 20px; font-weight: 700; color: #f0a500; }
+
+    .refresh-btn {
+      background: #3d5af1;
+      color: white;
+      border: none;
+      padding: 8px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      margin-left: auto;
+    }
+    .refresh-btn:hover { background: #2d4ae1; }
+
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+    .dot.active { background: #2dcc70; }
+    .dot.busy { background: #f0a500; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Dashboard Livraison</h1>
+  </div>
+  <span id="last-update">Chargement...</span>
+  <button class="refresh-btn" onclick="loadData()">Actualiser</button>
+</header>
+
+<div class="grid" id="stats-grid">
+  <div class="card">
+    <h2>En attente</h2>
+    <div class="value" id="stat-attente">-</div>
+    <div class="sub">commandes</div>
+  </div>
+  <div class="card">
+    <h2>Assignees</h2>
+    <div class="value" id="stat-assignees">-</div>
+    <div class="sub">commandes</div>
+  </div>
+  <div class="card">
+    <h2>Livrees</h2>
+    <div class="value" id="stat-livrees">-</div>
+    <div class="sub">commandes</div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="section" style="padding:0">
+    <h2>Livreurs</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nom</th>
+          <th>Region</th>
+          <th>Rating</th>
+          <th>En cours</th>
+          <th>Completes</th>
+        </tr>
+      </thead>
+      <tbody id="livreurs-table"></tbody>
+    </table>
+  </div>
+
+  <div>
+    <div class="section" style="padding:0; margin-bottom:16px">
+      <h2>Top Livreurs</h2>
+      <div id="top-livreurs"></div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Commandes</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Client</th>
+        <th>Destination</th>
+        <th>Montant</th>
+        <th>Statut</th>
+        <th>Heure</th>
+      </tr>
+    </thead>
+    <tbody id="commandes-table"></tbody>
+  </table>
+</div>
+
+<script>
+async function loadData() {
+  const res = await fetch('/api/dashboard');
+  const data = await res.json();
+
+  document.getElementById('stat-attente').textContent = data.enAttente.length;
+  document.getElementById('stat-assignees').textContent = data.assignees.length;
+  document.getElementById('stat-livrees').textContent = data.livrees.length;
+
+  // Livreurs
+  const livreursHtml = data.livreurs.map(l => `
+    <tr>
+      <td><strong>${l.id}</strong></td>
+      <td>${l.nom || '-'}</td>
+      <td>${l.region || '-'}</td>
+      <td><span class="stars">★</span> ${parseFloat(l.rating).toFixed(1)}</td>
+      <td>${l.livraisons_en_cours || 0}</td>
+      <td>${l.livraisons_completees || 0}</td>
+    </tr>
+  `).join('');
+  document.getElementById('livreurs-table').innerHTML = livreursHtml;
+
+  // Top livreurs
+  const top = [...data.top2].reverse();
+  const topHtml = top.map((l, i) => `
+    <div class="top-livreur">
+      <div class="rank">${i + 1}</div>
+      <div class="info">
+        <div class="name">${l.value}</div>
+        <div class="id">Livreur</div>
+      </div>
+      <div class="score">★ ${l.score}</div>
+    </div>
+  `).join('');
+  document.getElementById('top-livreurs').innerHTML = topHtml;
+
+  // Commandes
+  const commandesHtml = data.commandes.map(c => `
+    <tr>
+      <td><strong>${c.id}</strong></td>
+      <td>${c.client || '-'}</td>
+      <td>${c.destination || '-'}</td>
+      <td>${c.montant || '-'}€</td>
+      <td><span class="badge ${c.statut === 'en_attente' ? 'en_attente' : c.statut === 'assignée' ? 'assignee' : 'livree'}">${c.statut}</span></td>
+      <td>${c.creee || '-'}</td>
+    </tr>
+  `).join('');
+  document.getElementById('commandes-table').innerHTML = commandesHtml;
+
+  document.getElementById('last-update').textContent = 'Mis a jour : ' + new Date().toLocaleTimeString();
+}
+
+loadData();
+setInterval(loadData, 5000);
+</script>
+</body>
+</html>
